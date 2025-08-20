@@ -31,14 +31,14 @@ jobs:
       run: |
         ssh $VM_USER@$VM_HOST << 'EOF'
           # Stop existing containers if they exist
-          if [ -d "/opt/winai" ]; then
-            cd /opt/winai
+          if [ -d "/home/azureuser/winai" ]; then
+            cd /home/azureuser/winai
             sudo docker-compose down || true
           fi
           
           # Create app directory
-          sudo mkdir -p /opt/winai
-          cd /opt/winai
+          sudo mkdir -p /home/azureuser/winai
+          cd /home/azureuser/winai
           
           # Clone or pull latest code
           if [ -d ".git" ]; then
@@ -80,7 +80,7 @@ jobs:
         VM_USER: ${{ secrets.VM_USER }}
       run: |
         ssh $VM_USER@$VM_HOST << 'EOF'
-          cd /opt/winai
+          cd /home/azureuser/winai
           echo "=== Service Status ==="
           sudo docker-compose ps
           

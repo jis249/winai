@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-APP_DIR="/opt/winai"
+APP_DIR="/home/azureuser/winai"
 REPO_URL="https://github.com/jis249/winai.git"
 DOMAIN="winai.hiretechteam.ai"
 
