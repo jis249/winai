@@ -8,26 +8,67 @@ This project sets up an OpenAI-compatible API server using Ollama with SSL termi
 - **VM IP**: 20.193.248.140
 - **SSL**: Automatic certificate management with Let's Encrypt
 
-## Prerequisites
+## Project Structure
 
-1. Point your domain `winai.hiretechteam.ai` to your VM IP `20.193.248.140`
-2. Ensure ports 80 and 443 are open in your firewall
-3. Update the email address in `docker-compose.yml` for Let's Encrypt
+```
+winai/
+├── .github/workflows/deploy.yml  # Automated GitHub Actions deployment
+├── docker-compose.yml            # Container orchestration
+├── nginx.conf                    # HTTPS nginx configuration
+├── nginx-http-only.conf          # HTTP-only nginx configuration
+├── README.md                     # This file
+└── DEPLOYMENT.md                 # Detailed deployment instructions
+```
 
-## Quick Start
+## Automated Deployment (Recommended)
 
-1. **Update email**: Edit `docker-compose.yml` and replace `your-email@example.com` with your actual email
-2. **Start services**: 
+This project is designed for **fully automated deployment** using GitHub Actions:
+
+### Setup Steps
+
+1. **Fork this repository** to your GitHub account
+2. **Configure GitHub Secrets**:
+   - `VM_HOST`: Your VM IP (20.193.248.140)
+   - `VM_USER`: SSH username (usually `azureuser`)
+   - `VM_SSH_PRIVATE_KEY`: Your SSH private key content
+   - `LETSENCRYPT_EMAIL`: Your email for SSL certificates
+   - `PAT_TOKEN`: GitHub Personal Access Token (optional, for private repos)
+
+3. **Deploy**: Push any change to the `main` branch to trigger deployment
+
+### What the Automation Does
+
+✅ **Clones** latest code to `/opt/winai` on your VM  
+✅ **Configures** nginx with correct port mappings  
+✅ **Starts** all services (Ollama, Nginx, Certbot)  
+✅ **Downloads** AI models (llama3.2, mxbai-embed-large)  
+✅ **Obtains** SSL certificates (when rate limits allow)  
+✅ **Tests** all endpoints automatically  
+✅ **Handles** fallback to HTTP if SSL fails  
+
+## Manual Deployment (Alternative)
+
+If you prefer manual deployment:
+
+1. **Clone to VM**: 
    ```bash
-   docker-compose up -d
+   sudo rm -rf /opt/winai
+   sudo mkdir -p /opt/winai
+   cd /opt/winai
+   sudo git clone https://github.com/YOUR_USERNAME/winai.git .
    ```
-3. **Get SSL certificate**: 
+
+2. **Update email**: Edit `docker-compose.yml` and replace email with your actual email
+
+3. **Start services**: 
    ```bash
-   docker-compose run --rm certbot
+   sudo docker-compose up -d
    ```
-4. **Restart nginx**: 
+
+4. **SSL certificates**: Will be obtained automatically, or manually run:
    ```bash
-   docker-compose restart nginx
+   sudo docker-compose run --rm certbot
+   sudo docker-compose restart nginx
    ```
 
 ## API Usage
@@ -82,54 +123,45 @@ The setup automatically pulls:
 - `/api/*` - Direct Ollama API access
 - `/health` - Health check endpoint
 
-## SSL Certificate Renewal
+## Monitoring & Management
 
-Certificates auto-renew. To set up a cron job for renewal:
-
+**Check service status:**
 ```bash
-# Add to crontab (crontab -e)
-0 12 * * * cd /path/to/winai && docker-compose run --rm certbot renew && docker-compose restart nginx
+sudo docker-compose ps
+sudo docker-compose logs -f nginx
+sudo docker-compose logs -f ollama
+```
+
+**Restart services:**
+```bash
+sudo docker-compose restart
+```
+
+**Health check:**
+```bash
+curl http://localhost/health
+curl https://winai.hiretechteam.ai/health
 ```
 
 ## Security Features
 
-- Rate limiting (10 requests/second with burst of 20)
-- HTTPS redirect
-- Security headers
-- CORS support for browser access
+- **Rate limiting**: 10 requests/second with burst of 20
+- **HTTPS redirect**: Automatic HTTP to HTTPS redirect
+- **Security headers**: HSTS, X-Frame-Options, etc.
+- **CORS support**: Cross-origin requests enabled for browser access
 
-## Monitoring
+## SSL Certificate Auto-Renewal
 
-Check service status:
+Certificates auto-renew. For manual renewal:
+
 ```bash
-docker-compose ps
-docker-compose logs -f
+sudo docker-compose run --rm certbot renew
+sudo docker-compose restart nginx
 ```
-
-## Automated Deployment
-
-This project includes GitHub Actions for automated deployment to your VM. See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed setup instructions.
-
-### Quick Deploy
-
-1. **Fork this repository** to your GitHub account
-2. **Configure secrets** in repository settings:
-   - `VM_HOST`: Your VM IP (20.193.248.140)
-   - `VM_USER`: SSH username
-   - `VM_SSH_PRIVATE_KEY`: Your SSH private key
-   - `LETSENCRYPT_EMAIL`: Your email for SSL certificates
-3. **Push to main branch** to trigger automatic deployment
-
-### Manual Scripts
-
-Available deployment scripts:
-- `deploy.sh` - Full deployment script
-- `restart.sh` - Restart services
-- `health-check.sh` - Check service health
 
 ## Troubleshooting
 
 1. **Certificate issues**: Check domain DNS and firewall settings
-2. **502 errors**: Ensure Ollama service is running
-3. **Rate limiting**: Adjust nginx configuration if needed
+2. **502 errors**: Ensure Ollama service is running with correct port (11434)
+3. **Rate limiting**: Let's Encrypt limits 5 certs per week per domain
 4. **Deployment issues**: Check GitHub Actions logs and [DEPLOYMENT.md](DEPLOYMENT.md)
