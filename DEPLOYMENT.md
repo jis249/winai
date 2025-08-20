@@ -24,7 +24,7 @@ Go to your repository settings → Secrets and variables → Actions, and add th
 | `VM_HOST` | Your VM's IP address or domain | `20.193.248.140` |
 | `VM_USER` | SSH username for your VM | `ubuntu` or `azureuser` |
 | `VM_SSH_PRIVATE_KEY` | Private SSH key for VM access | Contents of your private key file |
-| `LETSENCRYPT_EMAIL` | Email for Let's Encrypt certificates | `your-email@example.com` |
+| `LETSENCRYPT_EMAIL` | Email for Let's Encrypt certificates | `amol.kulkarni@waiin.com` |
 | `PAT_TOKEN` | GitHub Personal Access Token for repository access | `ghp_xxxxxxxxxxxxxxxxxxxx` |
 
 ### Setting up GitHub Personal Access Token
@@ -84,7 +84,7 @@ If you prefer to deploy manually, you can run the deployment script directly on 
 2. **Run the deployment script**:
    ```bash
    # Set your email for Let's Encrypt
-   export LETSENCRYPT_EMAIL="your-email@example.com"
+   export LETSENCRYPT_EMAIL="amol.kulkarni@waiin.com"
    
    # Optional: Set PAT token for private repository access
    export PAT_TOKEN="your_github_pat_token_here"
