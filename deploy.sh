@@ -106,7 +106,17 @@ configure_email() {
     fi
     
     log "Configuring Let's Encrypt email: $LETSENCRYPT_EMAIL"
-    $SUDO sed -i "s/your-email@example.com/$LETSENCRYPT_EMAIL/g" docker-compose.yml
+    
+    # Use a more robust sed command to replace the email
+    $SUDO sed -i "s|--email your-email@example.com|--email $LETSENCRYPT_EMAIL|g" docker-compose.yml
+    
+    # Verify the replacement worked
+    if grep -q "your-email@example.com" docker-compose.yml; then
+        warn "Email replacement may have failed, trying alternative method..."
+        $SUDO sed -i "s|your-email@example.com|$LETSENCRYPT_EMAIL|g" docker-compose.yml
+    fi
+    
+    log "Email configuration completed"
 }
 
 # Function to deploy the application
@@ -116,8 +126,13 @@ deploy_app() {
     # Stop existing containers
     $SUDO docker-compose down || true
     
-    # Start services
-    log "Starting services..."
+    # Start services with HTTP-only first
+    log "Starting services with HTTP configuration..."
+    
+    # Copy HTTP-only nginx config initially
+    $SUDO cp nginx-initial.conf nginx-current.conf
+    $SUDO sed -i 's|./nginx.conf:/etc/nginx/nginx.conf:ro|./nginx-current.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
+    
     $SUDO docker-compose up -d
     
     # Wait for services to be ready
@@ -141,11 +156,31 @@ deploy_app() {
 setup_ssl() {
     if [ ! -f "ssl/live/$DOMAIN/fullchain.pem" ]; then
         log "Setting up SSL certificate..."
-        $SUDO docker-compose run --rm certbot
-        $SUDO docker-compose restart nginx
-        log "SSL certificate setup completed"
+        
+        # Run certbot to get certificate
+        if $SUDO docker-compose run --rm certbot; then
+            log "SSL certificate obtained successfully"
+            
+            # Switch to HTTPS configuration
+            log "Switching to HTTPS configuration..."
+            $SUDO cp nginx.conf nginx-current.conf
+            $SUDO docker-compose restart nginx
+            
+            log "SSL certificate setup completed"
+        else
+            warn "SSL certificate generation failed, continuing with HTTP only"
+            log "You can manually run: sudo ./setup-ssl-manual.sh"
+        fi
     else
         log "SSL certificate already exists"
+        
+        # Make sure we're using the HTTPS config
+        if [ ! -f "nginx-current.conf" ] || ! diff -q nginx.conf nginx-current.conf > /dev/null; then
+            log "Switching to HTTPS configuration..."
+            $SUDO cp nginx.conf nginx-current.conf
+            $SUDO sed -i 's|./nginx-initial.conf:/etc/nginx/nginx.conf:ro|./nginx-current.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
+            $SUDO docker-compose restart nginx
+        fi
     fi
 }
 

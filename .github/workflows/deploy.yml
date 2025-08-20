@@ -56,13 +56,21 @@ jobs:
             exit 1
           fi
           
-          # Update email in docker-compose.yml
-          sudo sed -i "s/your-email@example.com/\$LETSENCRYPT_EMAIL/g" docker-compose.yml
+          # Update email in docker-compose.yml (more robust replacement)
+          sudo sed -i "s|--email your-email@example.com|--email \$LETSENCRYPT_EMAIL|g" docker-compose.yml
+          
+          # Verify the replacement worked
+          if grep -q "your-email@example.com" docker-compose.yml; then
+            echo "Trying alternative email replacement method..."
+            sudo sed -i "s|your-email@example.com|\$LETSENCRYPT_EMAIL|g" docker-compose.yml
+          fi
           
           # Create SSL directory
           sudo mkdir -p ssl
           
-          # Start services
+          # Start services with HTTP-only configuration first
+          sudo cp nginx-initial.conf nginx-current.conf
+          sudo sed -i 's|./nginx.conf:/etc/nginx/nginx.conf:ro|./nginx-current.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
           sudo docker-compose up -d
           
           # Wait for services to be ready
@@ -72,7 +80,16 @@ jobs:
           # Check if we need to get SSL certificate
           if [ ! -f "ssl/live/winai.hiretechteam.ai/fullchain.pem" ]; then
             echo "Getting SSL certificate..."
-            sudo docker-compose run --rm certbot
+            if sudo docker-compose run --rm certbot; then
+              echo "SSL certificate obtained, switching to HTTPS..."
+              sudo cp nginx.conf nginx-current.conf
+              sudo docker-compose restart nginx
+            else
+              echo "SSL certificate generation failed, continuing with HTTP"
+            fi
+          else
+            echo "SSL certificate exists, switching to HTTPS configuration..."
+            sudo cp nginx.conf nginx-current.conf
             sudo docker-compose restart nginx
           fi
           
