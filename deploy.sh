@@ -60,11 +60,20 @@ setup_app() {
     # Clone or update repository (without sudo for user directory)
     if [ -d ".git" ]; then
         log "Updating existing repository..."
+        # Update remote URL if PAT_TOKEN is provided
+        if [ -n "$PAT_TOKEN" ]; then
+            git remote set-url origin "https://${PAT_TOKEN}@github.com/jis249/winai.git"
+        fi
         git fetch origin main
         git reset --hard origin/main
     else
         log "Cloning repository..."
-        git clone $REPO_URL .
+        # Use PAT token if provided, otherwise use regular HTTPS
+        if [ -n "$PAT_TOKEN" ]; then
+            git clone "https://${PAT_TOKEN}@github.com/jis249/winai.git" .
+        else
+            git clone $REPO_URL .
+        fi
     fi
     
     # Create SSL directory

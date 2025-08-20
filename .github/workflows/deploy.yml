@@ -28,8 +28,9 @@ jobs:
         VM_HOST: ${{ secrets.VM_HOST }}
         VM_USER: ${{ secrets.VM_USER }}
         LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL }}
+        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
-        ssh $VM_USER@$VM_HOST << 'EOF'
+        ssh $VM_USER@$VM_HOST << EOF
           # Stop existing containers if they exist
           if [ -d "/home/azureuser/winai" ]; then
             cd /home/azureuser/winai
@@ -42,14 +43,15 @@ jobs:
           
           # Clone or pull latest code (without sudo for user directory)
           if [ -d ".git" ]; then
+            git remote set-url origin https://${PAT_TOKEN}@github.com/${{ github.repository }}.git
             git fetch origin main
             git reset --hard origin/main
           else
-            git clone https://github.com/${{ github.repository }}.git .
+            git clone https://${PAT_TOKEN}@github.com/${{ github.repository }}.git .
           fi
           
           # Update email in docker-compose.yml
-          sed -i "s/your-email@example.com/$LETSENCRYPT_EMAIL/g" docker-compose.yml
+          sed -i "s/your-email@example.com/\$LETSENCRYPT_EMAIL/g" docker-compose.yml
           
           # Create SSL directory
           mkdir -p ssl

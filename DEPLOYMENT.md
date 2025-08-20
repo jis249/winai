@@ -22,9 +22,18 @@ Go to your repository settings → Secrets and variables → Actions, and add th
 | Secret Name | Description | Example |
 |-------------|-------------|---------|
 | `VM_HOST` | Your VM's IP address or domain | `20.193.248.140` |
-| `VM_USER` | SSH username for your VM | `ubuntu` or `root` |
+| `VM_USER` | SSH username for your VM | `ubuntu` or `azureuser` |
 | `VM_SSH_PRIVATE_KEY` | Private SSH key for VM access | Contents of your private key file |
 | `LETSENCRYPT_EMAIL` | Email for Let's Encrypt certificates | `your-email@example.com` |
+| `PAT_TOKEN` | GitHub Personal Access Token for repository access | `ghp_xxxxxxxxxxxxxxxxxxxx` |
+
+### Setting up GitHub Personal Access Token
+
+1. **Create a Personal Access Token**:
+   - Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Click "Generate new token (classic)"
+   - Select scopes: `repo` (for private repositories) or `public_repo` (for public repositories)
+   - Copy the generated token and add it as `PAT_TOKEN` secret
 
 ### Setting up SSH Key for GitHub Actions
 
@@ -69,13 +78,16 @@ If you prefer to deploy manually, you can run the deployment script directly on 
 
 1. **SSH to your VM**:
    ```bash
-   ssh user@20.193.248.140
+   ssh azureuser@20.193.248.140
    ```
 
 2. **Run the deployment script**:
    ```bash
    # Set your email for Let's Encrypt
    export LETSENCRYPT_EMAIL="your-email@example.com"
+   
+   # Optional: Set PAT token for private repository access
+   export PAT_TOKEN="your_github_pat_token_here"
    
    # Download and run the deployment script
    curl -sSL https://raw.githubusercontent.com/jis249/winai/main/deploy.sh | bash
