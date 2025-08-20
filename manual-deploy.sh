@@ -1,13 +1,12 @@
 #!/bin/bash
 
-# WinAI Deployment Script
-# This script deploys the WinAI application using Docker Compose
+# Manual WinAI Deployment Script
+# This script deploys the WinAI application by transferring files directly
 
 set -e
 
 # Configuration
 APP_DIR="/home/azureuser/winai"
-REPO_URL="https://github.com/jis249/winai.git"
 DOMAIN="winai.hiretechteam.ai"
 
 # Colors for output
@@ -49,22 +48,21 @@ check_docker() {
     log "Docker and Docker Compose are installed"
 }
 
-# Function to setup the application
+# Function to setup the application (assumes files are already present)
 setup_app() {
     log "Setting up application directory..."
     
-    # Create app directory (without sudo since it's in user home)
+    # Create app directory if it doesn't exist
     mkdir -p $APP_DIR
     cd $APP_DIR
     
-    # Clone or update repository (without sudo for user directory)
-    if [ -d ".git" ]; then
-        log "Updating existing repository..."
-        git fetch origin main
-        git reset --hard origin/main
-    else
-        log "Cloning repository..."
-        git clone $REPO_URL .
+    # Check if required files exist
+    if [ ! -f "docker-compose.yml" ]; then
+        error "docker-compose.yml not found. Please ensure all project files are in $APP_DIR"
+    fi
+    
+    if [ ! -f "nginx.conf" ]; then
+        error "nginx.conf not found. Please ensure all project files are in $APP_DIR"
     fi
     
     # Create SSL directory
@@ -83,7 +81,7 @@ configure_email() {
     fi
     
     log "Configuring Let's Encrypt email: $LETSENCRYPT_EMAIL"
-    $SUDO sed -i "s/your-email@example.com/$LETSENCRYPT_EMAIL/g" docker-compose.yml
+    sed -i "s/your-email@example.com/$LETSENCRYPT_EMAIL/g" docker-compose.yml
 }
 
 # Function to deploy the application
@@ -91,11 +89,11 @@ deploy_app() {
     log "Deploying application..."
     
     # Stop existing containers
-    $SUDO docker-compose down || true
+    docker-compose down || true
     
     # Start services
     log "Starting services..."
-    $SUDO docker-compose up -d
+    docker-compose up -d
     
     # Wait for services to be ready
     log "Waiting for services to start..."
@@ -118,8 +116,8 @@ deploy_app() {
 setup_ssl() {
     if [ ! -f "ssl/live/$DOMAIN/fullchain.pem" ]; then
         log "Setting up SSL certificate..."
-        $SUDO docker-compose run --rm certbot
-        $SUDO docker-compose restart nginx
+        docker-compose run --rm certbot
+        docker-compose restart nginx
         log "SSL certificate setup completed"
     else
         log "SSL certificate already exists"
@@ -130,7 +128,7 @@ setup_ssl() {
 show_status() {
     log "Deployment Status:"
     echo "==================="
-    $SUDO docker-compose ps
+    docker-compose ps
     
     echo ""
     log "Testing health endpoint..."
@@ -144,7 +142,7 @@ show_status() {
     
     echo ""
     log "Recent logs:"
-    $SUDO docker-compose logs --tail=10
+    docker-compose logs --tail=10
     
     echo ""
     log "Deployment completed!"
@@ -154,7 +152,8 @@ show_status() {
 
 # Main deployment process
 main() {
-    log "Starting WinAI deployment..."
+    log "Starting WinAI manual deployment..."
+    log "Note: This script assumes all project files are already in $APP_DIR"
     
     check_docker
     setup_app
@@ -168,7 +167,7 @@ main() {
     echo "Next steps:"
     echo "1. Test the API: curl https://$DOMAIN/health"
     echo "2. Use the OpenAI-compatible endpoint: https://$DOMAIN/v1"
-    echo "3. Monitor logs: cd $APP_DIR && sudo docker-compose logs -f"
+    echo "3. Monitor logs: cd $APP_DIR && docker-compose logs -f"
 }
 
 # Run main function

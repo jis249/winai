@@ -36,23 +36,23 @@ jobs:
             sudo docker-compose down || true
           fi
           
-          # Create app directory
-          sudo mkdir -p /home/azureuser/winai
+          # Create app directory (without sudo since it's in user home)
+          mkdir -p /home/azureuser/winai
           cd /home/azureuser/winai
           
-          # Clone or pull latest code
+          # Clone or pull latest code (without sudo for user directory)
           if [ -d ".git" ]; then
-            sudo git fetch origin main
-            sudo git reset --hard origin/main
+            git fetch origin main
+            git reset --hard origin/main
           else
-            sudo git clone https://github.com/${{ github.repository }}.git .
+            git clone https://github.com/${{ github.repository }}.git .
           fi
           
           # Update email in docker-compose.yml
-          sudo sed -i "s/your-email@example.com/$LETSENCRYPT_EMAIL/g" docker-compose.yml
+          sed -i "s/your-email@example.com/$LETSENCRYPT_EMAIL/g" docker-compose.yml
           
           # Create SSL directory
-          sudo mkdir -p ssl
+          mkdir -p ssl
           
           # Start services
           sudo docker-compose up -d
