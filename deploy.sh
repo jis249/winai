@@ -53,27 +53,41 @@ check_docker() {
 setup_app() {
     log "Setting up application directory..."
     
-    # Create app directory (without sudo since it's in user home)
+    # Stop existing containers if they exist
+    if [ -d "$APP_DIR" ]; then
+        cd $APP_DIR
+        if [ -f "docker-compose.yml" ]; then
+            log "Stopping existing services..."
+            $SUDO docker-compose down || true
+        fi
+    fi
+    
+    # Clean up and recreate app directory for fresh deployment
+    log "Cleaning up existing directory..."
+    rm -rf $APP_DIR
     mkdir -p $APP_DIR
     cd $APP_DIR
     
-    # Clone or update repository (without sudo for user directory)
-    if [ -d ".git" ]; then
-        log "Updating existing repository..."
-        # Update remote URL if PAT_TOKEN is provided
-        if [ -n "$PAT_TOKEN" ]; then
-            git remote set-url origin "https://${PAT_TOKEN}@github.com/jis249/winai.git"
-        fi
-        git fetch origin main
-        git reset --hard origin/main
+    # Clone repository
+    log "Cloning repository..."
+    if [ -n "$PAT_TOKEN" ]; then
+        git clone "https://${PAT_TOKEN}@github.com/jis249/winai.git" .
     else
-        log "Cloning repository..."
-        # Use PAT token if provided, otherwise use regular HTTPS
-        if [ -n "$PAT_TOKEN" ]; then
-            git clone "https://${PAT_TOKEN}@github.com/jis249/winai.git" .
-        else
-            git clone $REPO_URL .
-        fi
+        git clone $REPO_URL .
+    fi
+    
+    # Verify files were cloned
+    log "Verifying cloned files..."
+    if [ -f "docker-compose.yml" ]; then
+        log "✅ docker-compose.yml found"
+    else
+        error "❌ docker-compose.yml NOT found - clone may have failed"
+    fi
+    
+    if [ -f "nginx.conf" ]; then
+        log "✅ nginx.conf found"
+    else
+        error "❌ nginx.conf NOT found - clone may have failed"
     fi
     
     # Create SSL directory
