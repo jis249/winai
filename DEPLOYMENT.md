@@ -97,7 +97,7 @@ If you prefer to deploy manually, you can run the deployment script directly on 
 
 The deployment process performs these steps:
 
-1. **Clone/Update Repository**: Downloads latest code to `/home/azureuser/winai`
+1. **Clone/Update Repository**: Downloads latest code to `/opt/winai`
 2. **Configure SSL Email**: Updates Let's Encrypt email in docker-compose.yml
 3. **Start Services**: Runs `docker-compose up -d`
 4. **Setup SSL Certificate**: Obtains Let's Encrypt certificate if needed
@@ -195,14 +195,14 @@ Add this to your VM's crontab for automatic certificate renewal:
 
 ```bash
 # Run every day at noon
-0 12 * * * cd /home/azureuser/winai && sudo docker-compose run --rm certbot renew --quiet && sudo docker-compose restart nginx
+0 12 * * * cd /opt/winai && sudo docker-compose run --rm certbot renew --quiet && sudo docker-compose restart nginx
 ```
 
 ### Updates
 
 To update the application:
 1. Push changes to the `main` branch (triggers automatic deployment)
-2. Or manually run: `cd /home/azureuser/winai && git pull && sudo docker-compose up -d --build`
+2. Or manually run: `cd /opt/winai && git pull && sudo docker-compose up -d --build`
 
 ## Monitoring
 

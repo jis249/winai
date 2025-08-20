@@ -3,7 +3,7 @@
 # Restart Script for WinAI
 # This script safely restarts all services
 
-APP_DIR="/home/azureuser/winai"
+APP_DIR="/opt/winai"
 
 # Colors
 GREEN='\033[0;32m'

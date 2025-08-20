@@ -32,18 +32,18 @@ jobs:
       run: |
         ssh $VM_USER@$VM_HOST << EOF
           # Stop existing containers if they exist
-          if [ -d "/home/azureuser/winai" ]; then
-            cd /home/azureuser/winai
+          if [ -d "/opt/winai" ]; then
+            cd /opt/winai
             sudo docker-compose down || true
           fi
           
-          # Clean up and recreate app directory
-          rm -rf /home/azureuser/winai
-          mkdir -p /home/azureuser/winai
-          cd /home/azureuser/winai
+          # Clean up and recreate app directory (need sudo for /opt)
+          sudo rm -rf /opt/winai
+          sudo mkdir -p /opt/winai
+          cd /opt/winai
           
-          # Clone latest code with PAT token
-          git clone https://\${PAT_TOKEN}@github.com/${{ github.repository }}.git .
+          # Clone latest code with PAT token (with sudo for /opt directory)
+          sudo git clone https://\${PAT_TOKEN}@github.com/${{ github.repository }}.git .
           
           # Verify files were cloned
           echo "=== Verifying cloned files ==="
@@ -57,10 +57,10 @@ jobs:
           fi
           
           # Update email in docker-compose.yml
-          sed -i "s/your-email@example.com/\$LETSENCRYPT_EMAIL/g" docker-compose.yml
+          sudo sed -i "s/your-email@example.com/\$LETSENCRYPT_EMAIL/g" docker-compose.yml
           
           # Create SSL directory
-          mkdir -p ssl
+          sudo mkdir -p ssl
           
           # Start services
           sudo docker-compose up -d
@@ -88,7 +88,7 @@ jobs:
         VM_USER: ${{ secrets.VM_USER }}
       run: |
         ssh $VM_USER@$VM_HOST << 'EOF'
-          cd /home/azureuser/winai
+          cd /opt/winai
           echo "=== Service Status ==="
           sudo docker-compose ps
           

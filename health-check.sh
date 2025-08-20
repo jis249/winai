@@ -4,7 +4,7 @@
 # This script checks the health of all services
 
 DOMAIN="winai.hiretechteam.ai"
-APP_DIR="/home/azureuser/winai"
+APP_DIR="/opt/winai"
 
 # Colors
 GREEN='\033[0;32m'

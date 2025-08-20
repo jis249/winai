@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-APP_DIR="/home/azureuser/winai"
+APP_DIR="/opt/winai"
 REPO_URL="https://github.com/jis249/winai.git"
 DOMAIN="winai.hiretechteam.ai"
 
@@ -62,18 +62,18 @@ setup_app() {
         fi
     fi
     
-    # Clean up and recreate app directory for fresh deployment
+    # Clean up and recreate app directory (need sudo for /opt directory)
     log "Cleaning up existing directory..."
-    rm -rf $APP_DIR
-    mkdir -p $APP_DIR
+    $SUDO rm -rf $APP_DIR
+    $SUDO mkdir -p $APP_DIR
     cd $APP_DIR
     
-    # Clone repository
+    # Clone repository (with sudo for /opt directory)
     log "Cloning repository..."
     if [ -n "$PAT_TOKEN" ]; then
-        git clone "https://${PAT_TOKEN}@github.com/jis249/winai.git" .
+        $SUDO git clone "https://${PAT_TOKEN}@github.com/jis249/winai.git" .
     else
-        git clone $REPO_URL .
+        $SUDO git clone $REPO_URL .
     fi
     
     # Verify files were cloned
@@ -91,7 +91,7 @@ setup_app() {
     fi
     
     # Create SSL directory
-    mkdir -p ssl
+    $SUDO mkdir -p ssl
     
     log "Application setup completed"
 }
