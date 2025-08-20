@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      OLLAMA_NUM_GPU: "0"        # CPU-only
+      # OLLAMA_NUM_THREADS: "4"  # (optional) cap threads on small VMs
+    ports:
+      - "127.0.0.1:11434:11434"  # Only expose to localhost
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - certbot-data:/var/www/certbot
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - certbot-data:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d winai.hiretechteam.ai
+    depends_on:
+      - nginx
+
+  pull-models:
+    image: curlimages/curl:8.11.1
+    container_name: ollama-model-puller
+    depends_on:
+      ollama:
+        condition: service_started
+    entrypoint: ["/bin/sh","-lc"]
+    command:
+      - >
+        echo "Waiting for Ollama API...";
+        until curl -fsS http://ollama:11434/api/tags >/dev/null; do sleep 2; done;
+        echo "Pulling llama3.2 ...";
+        curl -fsS -H 'Content-Type: application/json' \
+          -X POST http://ollama:11434/api/pull \
+          -d '{"name":"llama3.2"}';
+        echo "Pulling mxbai-embed-large ...";
+        curl -fsS -H 'Content-Type: application/json' \
+          -X POST http://ollama:11434/api/pull \
+          -d '{"name":"mxbai-embed-large"}';
+        echo "Models pulled.";
+    restart: "no"
+
+volumes:
+  ollama-data:
+  certbot-data:
