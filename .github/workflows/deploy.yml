@@ -57,13 +57,8 @@ jobs:
           fi
           
           # Update email in docker-compose.yml (more robust replacement)
+          sudo sed -i "s|--email amol.kulkarni@waiin.com|--email \$LETSENCRYPT_EMAIL|g" docker-compose.yml
           sudo sed -i "s|--email your-email@example.com|--email \$LETSENCRYPT_EMAIL|g" docker-compose.yml
-          
-          # Verify the replacement worked
-          if grep -q "your-email@example.com" docker-compose.yml; then
-            echo "Trying alternative email replacement method..."
-            sudo sed -i "s|your-email@example.com|\$LETSENCRYPT_EMAIL|g" docker-compose.yml
-          fi
           
           # Create SSL directory
           sudo mkdir -p ssl
@@ -78,19 +73,22 @@ jobs:
           sleep 30
           
           # Check if we need to get SSL certificate
-          if [ ! -f "ssl/live/winai.hiretechteam.ai/fullchain.pem" ]; then
-            echo "Getting SSL certificate..."
+          echo "=== Checking for existing SSL certificates ==="
+          if [ -f "ssl/live/winai.hiretechteam.ai/fullchain.pem" ] && [ -f "ssl/live/winai.hiretechteam.ai/privkey.pem" ]; then
+            echo "✅ Existing SSL certificates found, switching to HTTPS..."
+            sudo cp nginx.conf nginx-current.conf
+            sudo docker-compose restart nginx
+          else
+            echo "🔒 No valid SSL certificates found, attempting to get new ones..."
             if sudo docker-compose run --rm certbot; then
-              echo "SSL certificate obtained, switching to HTTPS..."
+              echo "✅ SSL certificate obtained successfully, switching to HTTPS..."
               sudo cp nginx.conf nginx-current.conf
               sudo docker-compose restart nginx
             else
-              echo "SSL certificate generation failed, continuing with HTTP"
+              echo "❌ SSL certificate generation failed, continuing with HTTP"
+              echo "This might be due to rate limiting or DNS issues"
+              echo "You can manually run: sudo docker-compose run --rm certbot"
             fi
-          else
-            echo "SSL certificate exists, switching to HTTPS configuration..."
-            sudo cp nginx.conf nginx-current.conf
-            sudo docker-compose restart nginx
           fi
           
           # Show status
