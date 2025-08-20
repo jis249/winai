@@ -18,7 +18,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx-http-only.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-current.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
       - certbot-data:/var/www/certbot
     depends_on:
