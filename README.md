@@ -106,8 +106,30 @@ docker-compose ps
 docker-compose logs -f
 ```
 
+## Automated Deployment
+
+This project includes GitHub Actions for automated deployment to your VM. See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed setup instructions.
+
+### Quick Deploy
+
+1. **Fork this repository** to your GitHub account
+2. **Configure secrets** in repository settings:
+   - `VM_HOST`: Your VM IP (20.193.248.140)
+   - `VM_USER`: SSH username
+   - `VM_SSH_PRIVATE_KEY`: Your SSH private key
+   - `LETSENCRYPT_EMAIL`: Your email for SSL certificates
+3. **Push to main branch** to trigger automatic deployment
+
+### Manual Scripts
+
+Available deployment scripts:
+- `deploy.sh` - Full deployment script
+- `restart.sh` - Restart services
+- `health-check.sh` - Check service health
+
 ## Troubleshooting
 
 1. **Certificate issues**: Check domain DNS and firewall settings
 2. **502 errors**: Ensure Ollama service is running
 3. **Rate limiting**: Adjust nginx configuration if needed
+4. **Deployment issues**: Check GitHub Actions logs and [DEPLOYMENT.md](DEPLOYMENT.md)
